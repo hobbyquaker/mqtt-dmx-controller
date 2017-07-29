@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Lighting</title>
+
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css">
+    <link rel="stylesheet" href="node_modules/free-jqgrid/dist/css/ui.jqgrid.min.css">
+    <link rel="stylesheet" href="style.css">
+
+  </head>
+  <body>
+    <div id="tables">
+      <div id="scenes-container">
+        <table id="scenes"></table>
+        <div id="pager-scenes"></div>
+        <div id="controls-scenes">
+          <button id="scene-del" class="btn btn-xs btn-danger">Delete</button>
+          <button id="scene-save" class="btn btn-xs btn-warning">Save</button>
+          <button id="scene-new" class="btn btn-xs btn-primary">New</button>
+        </div>
+      </div>
+
+      <div id="sequences-container">
+        <table id="sequences"></table>
+        <div id="pager-sequences"></div>
+        <div id="controls-sequences">
+          <button id="sequence-del" class="btn btn-xs btn-danger">Delete</button>
+          <button id="sequence-new" class="btn btn-xs btn-primary">New</button>
+        </div>
+      </div>
+
+      <div id="steps-container">
+        <table id="steps"></table>
+        <div id="pager-steps"></div>
+        <div id="controls-steps">
+          <button id="step-del" class="btn btn-xs btn-danger">Delete</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="shortcuts-container" class="panel panel-default">
+      <div id="shortcuts" class="panel-body">
+        <button id="shortcut1" class="btn btn-default btn-info">Shortcut</button>
+        <button id="shortcut2" class="btn btn-default btn-info">Shortcut</button>
+        <button id="shortcut3" class="btn btn-default btn-info">Shortcut</button>
+        <button id="shortcut4" class="btn btn-default btn-info">Shortcut</button>
+        <button id="shortcut5" class="btn btn-default btn-info">Shortcut</button>
+        <button id="shortcut6" class="btn btn-default btn-info">Shortcut</button>
+        <button id="shortcut7" class="btn btn-default btn-info">Shortcut</button>
+        <button id="shortcut8" class="btn btn-default btn-info">Shortcut</button>
+      </div>
+    </div>
+
+    <div id="mixer-container" class="panel panel-default">
+      <div id="mixer" class="panel-body"></div>
+    </div>
+
+    <script>
+        require('./renderer.js')
+    </script>
+  </body>
+</html>

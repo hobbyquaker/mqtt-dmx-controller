@@ -1,0 +1,86 @@
+body {
+    padding-top: 2px;
+    padding-left: 2px;
+}
+#tables {
+    width: calc(100% - 1px);
+
+    display: flex;
+}
+/*
+      .ui-jqgrid-titlebar {
+        background-color: #337ab7 !important;
+        color: #fff;
+        border-color: #2e6da4 !important;
+
+      }
+      .ui-jqgrid-hbox {
+        background-color: #afd9ee;
+        color: #fff;
+      }*/
+
+#controls-steps button, #controls-scenes button, #controls-sequences button {
+    margin: 2px;
+    display: block;
+    width: 33%;
+}
+
+#controls-steps, #controls-scenes, #controls-sequences {
+    padding-top: 2px;
+    padding-bottom: 8px;
+    display: flex;
+}
+#steps-container, #scenes-container, #sequences-container {
+    width: 30%;
+    flex-grow: 1;
+    padding: 2px;
+}
+
+
+#mixer-container {
+    height: 270px;
+    margin-left: 2px;
+    width: calc(100% - 6px);
+}
+
+#shortcuts-container {
+    margin-left: 2px;
+    margin-bottom: 5px;
+    width: calc(100% - 6px);
+    height: 66px;
+}
+
+#shortcuts {
+    width: 100%;
+    display: flex;
+}
+
+#shortcuts button {
+    display: block;
+    flex-grow: 1;
+    width: 8%;
+    margin-right: 2px;
+    margin-left: 2px;
+    margininfo1px;
+}
+
+#mixer {
+    height: 260px;
+    width: 100%;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    display: flex;
+}
+.channel-title {
+    text-align: center;
+}
+.slider-container {
+    padding-left: 11px;
+    padding-bottom: 14px;
+    padding-top:12px;
+    height: 180px;
+}
+.channel .slider {
+    height: 150px;
+}
+
