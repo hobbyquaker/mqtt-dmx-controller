@@ -1,73 +1,218 @@
-const electron = require('electron')
+const electron = require('electron');
+
 const ipc = electron.ipcMain;
-// Module to control application life.
-const app = electron.app
-// Module to create native browser window.
-const BrowserWindow = electron.BrowserWindow
+const app = electron.app;
+const BrowserWindow = electron.BrowserWindow;
 
-const path = require('path')
-const url = require('url')
+const path = require('path');
+const url = require('url');
 
-const artnet = require('artnet')({
-    host: '172.16.23.15'
+const Mqtt = require('mqtt');
+const Artnet = require('artnet');
+
+const config = {
+    address: '172.16.23.15',
+    url: 'mqtt://127.0.0.1',
+    name: 'dmx'
+};
+
+let mainWindow;
+let mqttConnected;
+
+const runningSequences = {};
+
+const debug = console.log;
+
+const scenes = require('./example-scenes.json');
+const sequences = require('./example-sequences.json');
+
+const artnet = new Artnet({
+    host: config.address
 });
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let mainWindow
+artnet.data[0] = [];
+const sequencer = require('scene-sequencer')({
+    setter(data) {
+        mainWindow.webContents.send('data', JSON.stringify(data));
+        artnet.set(data);
+    },
 
-function createWindow () {
-  // Create the browser window.
-  mainWindow = new BrowserWindow({width: 1280, height: 720})
+    data: artnet.data[0],
+    scenes,
+    sequences
+});
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(url.format({
-    pathname: path.join(__dirname, 'index.html'),
-    protocol: 'file:',
-    slashes: true
-  }))
+function createWindow() {
+    mainWindow = new BrowserWindow({width: 1280, height: 720});
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+    mainWindow.loadURL(url.format({
+        pathname: path.join(__dirname, 'index.html'),
+        protocol: 'file:',
+        slashes: true
+    }));
 
-  // Emitted when the window is closed.
-  mainWindow.on('closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    mainWindow = null
-  })
+    mainWindow.webContents.openDevTools();
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', createWindow)
+app.on('ready', createWindow);
 
-// Quit when all windows are closed.
-app.on('window-all-closed', function () {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
 
-app.on('activate', function () {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) {
-    createWindow()
-  }
-})
+app.on('activate', () => {
+    if (mainWindow === null) {
+        createWindow();
+    }
+});
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+ipc.on('getscenes', event => {
+    event.sender.send('scenes', JSON.stringify(scenes));
+});
+
+ipc.on('getsequences', event => {
+    event.sender.send('sequences', JSON.stringify(sequences));
+});
 
 ipc.on('data', (event, data) => {
-    artnet.set(data, (err, res) => {
+    artnet.set(data, err => {
         if (err) {
-          console.log(err);
+            console.log(err);
         }
     });
 });
+
+ipc.on('seqstart', (event, data) => {
+    debug('seqstart', data);
+    updateSequence(data.name, data.speed, data.shuffle, data.repeat);
+});
+
+ipc.on('seqstop', (event, data) => {
+    debug('seqstop', data);
+    if (runningSequences[data]) {
+        runningSequences[data].stop();
+    }
+});
+
+sequencer.on('transition-conflict', ch => {
+    debug('transition conflict channel', ch);
+});
+
+sequencer.on('step', step => {
+    mainWindow.webContents.send('seqstep', step);
+});
+
+debug('mqtt trying to connect', config.url);
+const mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0'}});
+
+mqtt.on('connect', () => {
+    mqttConnected = true;
+    debug('mqtt connected ' + config.url);
+    mqtt.publish(config.name + '/connected', '2');
+    debug('mqtt subscribe', config.name + '/set/#');
+    mqtt.subscribe(config.name + '/set/#');
+});
+
+mqtt.on('close', () => {
+    if (mqttConnected) {
+        mqttConnected = false;
+        debug('mqtt closed ' + config.url);
+    }
+});
+
+mqtt.on('error', () => {
+    debug('mqtt error ' + config.url);
+});
+
+mqtt.on('message', (topic, payload) => {
+    payload = payload.toString();
+    debug('mqtt <', topic, payload);
+    const tpArr = topic.split('/');
+    let channel;
+    let scene;
+    let sequence;
+    let transition;
+    switch (tpArr[2]) {
+        case 'channel':
+            channel = parseInt(tpArr[3], 10);
+            if (channel < 1 || channel > 512) {
+                debug('invalid channel', tpArr[3]);
+            } else {
+                artnet.set(channel, parseInt(payload, 10));
+            }
+            break;
+        case 'scene':
+            scene = tpArr[3];
+            if (scenes[scene]) {
+                debug('setScene', scene);
+                transition = parseFloat(payload) || 0;
+                sequencer.setScene([scene, transition]);
+            } else {
+                debug('unknown scene', scene);
+            }
+            break;
+        case 'sequence':
+            sequence = tpArr[3];
+            if (tpArr[4] === 'stop' && runningSequences[sequence]) {
+                runningSequences[sequence].stop();
+            } else if (tpArr[4] === 'stop' && sequence === 'all') {
+                Object.keys(runningSequences).forEach(s => {
+                    runningSequences[s].stop();
+                });
+            } else if (sequences[sequence]) {
+                debug('newSequence', sequence);
+                newSequence(sequence, payload);
+            } else {
+                debug('unknown sequence', sequence);
+            }
+            break;
+        default:
+            debug('unknown cmd', tpArr[2]);
+    }
+
+    function newSequence(sequence, payload) {
+        let repeat = false;
+        let shuffle = false;
+        let speed = 1;
+
+        if (payload.indexOf('{') !== -1) {
+            try {
+                const tmp = JSON.parse(payload);
+                repeat = tmp.repeat;
+                shuffle = tmp.shuffle;
+                speed = tmp.speed;
+            } catch (err) {
+                debug(err);
+            }
+        }
+
+        updateSequence(sequence, repeat, shuffle, speed);
+    }
+});
+
+function updateSequence(sequence, speed, shuffle, repeat) {
+    if (runningSequences[sequence]) {
+        runningSequences[sequence].speed(speed);
+        runningSequences[sequence].shuffle(shuffle);
+        runningSequences[sequence].repeat(repeat);
+        return;
+    }
+
+    debug('newSequence', repeat, shuffle, speed);
+    debug('mqtt >', config.name + '/status/sequence/' + sequence, '1');
+    mqtt.publish(config.name + '/status/sequence/' + sequence, '1');
+    mainWindow.webContents.send('seqstart', sequence);
+    runningSequences[sequence] = sequencer.newSequence(sequence, repeat, shuffle, speed, () => {
+        debug('sequence end', sequence);
+        debug('mqtt >', config.name + '/status/sequence/' + sequence, '0');
+        mqtt.publish(config.name + '/status/sequence/' + sequence, '0');
+        mainWindow.webContents.send('seqstop', sequence);
+        delete runningSequences[sequence];
+    });
+}

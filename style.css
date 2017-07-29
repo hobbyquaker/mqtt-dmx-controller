@@ -64,12 +64,17 @@ body {
     margininfo1px;
 }
 
+#mixer-container {
+    margin-bottom: 0;
+}
+
 #mixer {
-    height: 260px;
+    height: 270px;
     width: 100%;
     overflow-x: scroll;
     overflow-y: hidden;
     display: flex;
+    padding-bottom: 0;
 }
 .channel-title {
     text-align: center;
@@ -84,3 +89,40 @@ body {
     height: 150px;
 }
 
+label.checkbox-container {
+    width: 21px;
+    padding-left: 15px;
+}
+
+.ui-jqgrid-actions .btn {
+    margin-left: 3px !important;
+    margin-right: 3px !important;
+}
+
+.ui-jqgrid-actions .btn.active{
+    border: 1px solid transparent !important;
+}
+
+
+.ui-jqgrid-actions .btn span.fa {
+    color: #999;
+    font-size: 10px !important;
+    padding: 2px 3px 2px 2px;
+}
+
+
+tr.trans {
+    background-color: lightblue;
+}
+
+tr.hold {
+    background-color: cornflowerblue;
+}
+
+.running span.fa {
+    color: red !important;
+}
+
+.slider-track-high {
+    background-color: lightsteelblue;
+}

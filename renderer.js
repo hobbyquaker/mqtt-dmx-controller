@@ -1,100 +1,25 @@
-const electron = require('electron');
-const ipc = electron.ipcRenderer;
-const $ = jQuery = require('jquery');
-window.$ = window.jQuery = jQuery;
+/* global window, document */
 
-require('./node_modules/bootstrap/dist/js/npm.js');
-//require('./node_modules/jquery-ui-dist/jquery-ui.min');
-require('./node_modules/bootstrap-slider/dist/bootstrap-slider.min');
-require('./node_modules/free-jqgrid/dist/jquery.jqgrid.min')(window, jQuery);
+const electron = require('electron');
+
+const ipc = electron.ipcRenderer;
+const $ = require('jquery');
+
+window.$ = $;
+window.jQuery = $;
+
+require('./node_modules/bootstrap/dist/js/npm.js'); // eslint-disable-line import/no-unassigned-import
+require('./node_modules/bootstrap-slider/dist/bootstrap-slider.min'); // eslint-disable-line import/no-unassigned-import
+require('./node_modules/free-jqgrid/dist/jquery.jqgrid.min')(window, $); // eslint-disable-line import/no-unassigned-import
 
 const data = new Array(512).fill(null);
 
-const scenes = {
-    "led white":        [null, 0, 0, 0, null, 0, 0, 0, null, 0, 0, 0, null, 0, 0, 0, null, 0, 0, 0, null, 0, 0, 0],
-    "led cyan":         [null, 255, 0, 0, null, 255, 0, 0, null, 255, 0, 0, null, 255, 0, 0, null, 255, 0, 0, null, 255, 0, 0],
-    "led magenta":      [null, 0, 255, 0, null, 0, 255, 0, null, 0, 255, 0, null, 0, 255, 0, null, 0, 255, 0, null, 0, 255, 0],
-    "led yellow":       [null, 0, 0, 255, null, 0, 0, 255, null, 0, 0, 255, null, 0, 0, 255, null, 0, 0, 255, null, 0, 0, 255],
-    "led red":          [null, 0, 255, 255, null, 0, 255, 255, null, 0, 255, 255, null, 0, 255, 255, null, 0, 255, 255, null, 0, 255, 255],
-    "led blue":         [null, 255, 255, 0, null, 255, 255, 0, null, 255, 255, 0, null, 255, 255, 0, null, 255, 255, 0, null, 255, 255, 0],
-    "led green":        [null, 255, 0, 255, null, 255, 0, 255, null, 255, 0, 255, null, 255, 0, 255, null, 255, 0, 255, null, 255, 0, 255],
-    "led on":           [255, null, null, null, 255, null, null, null, 255, null, null, null, 255, null, null, null, 255, null, null, null, 255, null, null, null],
-    "led off":          [0, null, null, null, 0, null, null, null, 0, null, null, null, 0, null, null, null, 0, null, null, null, 0, null, null, null],
-    "led 1 off":        [0, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-    "led 2 off":        [null, null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-    "led 3 off":        [null, null, null, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-    "led 4 off":        [null, null, null, null, null, null, null, null, null, null, null, null, 0, null, null, null, null, null, null, null, null, null, null, null],
-    "led 5 off":        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, null, null, null, null, null, null, null],
-    "led 6 off":        [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, null, null, null],
-    "led 1 on":         [255],
-    "led 2 on":         [null, null, null, null, 255],
-    "led 3 on":         [null, null, null, null, null, null, null, null, 255],
-    "led 4 on":         [null, null, null, null, null, null, null, null, null, null, null, null, 255],
-    "led 5 on":         [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255],
-    "led 6 on":         [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255],
+let scenes = {};
+let sequences = {};
 
-
-
-    "led 1 white":      [null, 0, 0, 0],
-    "led 1 cyan":       [null, 255, 0, 0],
-    "led 1 magenta":    [null, 0, 255, 0],
-    "led 1 yellow":     [null, 0, 0, 255],
-    "led 1 red":        [null, 0, 255, 255],
-    "led 1 blue":       [null, 255, 255, 0],
-    "led 1 bc2":       [null, 255, 160, 0],
-    "led 1 bc1":       [null, 255, 80, 0],
-    "led 1 green":      [null, 255, 0, 255],
-
-    "led 2 white":      [null, null, null, null, null, 0, 0, 0],
-    "led 2 cyan":     [null, null, null, null, null, 255, 0, 0],
-    "led 2 magenta":     [null, null, null, null, null, 0, 255, 0],
-    "led 2 yellow":     [null, null, null, null, null, 0, 0, 255],
-    "led 2 red":     [null, null, null, null, null, 0, 255, 255],
-    "led 2 blue":     [null, null, null, null, null, 255, 255, 0],
-    "led 2 bc2":       [null, null, null, null, null, 255, 160, 0],
-    "led 2 bc1":       [null, null, null, null, null, 255, 80, 0],
-    "led 2 green":    [null, null, null, null, null, 255, 0, 255],
-
-    "led 3 white":     [null, null, null, null, null, null, null, null, null, 0, 0, 0],
-    "led 3 cyan":     [null, null, null, null, null, null, null, null, null, 255, 0, 0],
-    "led 3 magenta":     [null, null, null, null, null, null, null, null, null, 0, 255, 0],
-    "led 3 yellow":     [null, null, null, null, null, null, null, null, null, 0, 0, 255],
-    "led 3 red":     [null, null, null, null, null, null, null, null, null, 0, 255, 255],
-    "led 3 blue":     [null, null, null, null, null, null, null, null, null, 255, 255, 0],
-    "led 3 bc2":       [null, null, null, null, null, null, null, null, null, 255, 160, 0],
-    "led 3 bc1":       [null, null, null, null, null, null, null, null, null, 255, 80, 0],
-    "led 3 green":    [null, null, null, null, null, null, null, null, null, 255, 0, 255],
-
-    "led 4 white":     [null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 0, 0],
-    "led 4 cyan":     [null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 0, 0],
-    "led 4 magenta":     [null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 255, 0],
-    "led 4 yellow":     [null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 0, 255],
-    "led 4 red":     [null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 255, 255],
-    "led 4 blue":     [null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 255, 0],
-    "led 4 bc2":       [null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 160, 0],
-    "led 4 bc1":       [null, null, null, null, null, null, null, null, null, null, null, null, null,  255, 80, 0],
-    "led 4 green":    [null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 0, 255],
-
-    "led 5 white":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 0, 0],
-    "led 5 cyan":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 0, 0],
-    "led 5 magenta":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 255, 0],
-    "led 5 yellow":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 0, 255],
-    "led 5 red":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 255, 255],
-    "led 5 blue":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 255, 0],
-    "led 5 bc2":       [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 160, 0],
-    "led 5 bc1":       [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 80, 0],
-    "led 5 green":    [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 0, 255],
-
-    "led 6 white":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 0, 0],
-    "led 6 cyan":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 0, 0],
-    "led 6 magenta":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 255, 0],
-    "led 6 yellow":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 0, 255],
-    "led 6 red":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 0, 255, 255],
-    "led 6 blue":     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 255, 0],
-    "led 6 bc2":       [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 160, 0],
-    "led 6 bc1":       [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 80, 0],
-    "led 6 green":    [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 255, 0, 255]
-};
+const sequenceSettings = {};
+let selectedSeq;
+const runningSequences = {};
 
 function appendChannel(channel) {
     $('#mixer').append(`
@@ -152,10 +77,7 @@ function appendChannel(channel) {
         }
         update();
     });
-
 }
-
-
 
 function update() {
     let last = 0;
@@ -185,8 +107,40 @@ function load(d) {
     update();
 }
 
+function updateData(d) {
+    d.forEach((val, idx) => {
+        // eslint-disable-next-line eqeqeq, no-eq-null
+        if (val == null) {
+            return;
+        }
+        data[idx] = val;
+        const channel = idx + 1;
+        $('input.channel-value[data-channel=' + channel + ']').val(val);
+        $('div.channel-slider[data-channel=' + channel + ']').slider('setValue', val);
+    });
+}
 
-$(document).ready(function () {
+ipc.on('data', (event, d) => {
+    updateData(JSON.parse(d));
+});
+
+ipc.on('seqstep', (event, step) => {
+    if (step.sequence === selectedSeq) {
+        const $row = $('table#steps tr[id=' + step.index + ']');
+        if (step.action === 'finish') {
+            $row.removeClass('trans');
+            $row.removeClass('hold');
+        } else if (step.action === 'hold') {
+            $row.addClass('hold');
+            $row.removeClass('trans');
+        } else {
+            $row.addClass('trans');
+            $row.removeClass('hold');
+        }
+    }
+});
+
+$(document).ready(() => {
     for (let i = 1; i <= 24; i++) {
         appendChannel(i);
     }
@@ -205,33 +159,33 @@ $(document).ready(function () {
     });
     */
 
-    $('#scene-del').button().click(function () {
+    $('#scene-del').button().click(() => {
 
     });
 
-    $('#scene-new').button().click(function () {
+    $('#scene-new').button().click(() => {
 
     });
 
-    $('#scene-save').button().click(function () {
+    $('#scene-save').button().click(() => {
 
     });
 });
 
 function initGrids() {
-
     const defaultOptions = {
-        cmTemplate: { autoResizable: true, editable: true },
-        autowidth:  true,
-        width:      '100%',
+        cmTemplate: {autoResizable: true, editable: true},
+        autowidth: true,
+        width: '100%',
         caption: 'Scenes',
         height: 200,
-        guiStyle: "bootstrap",
-        inlineEditing: { keys: true, defaultFocusField: "name", focusField: "name" },
-        hidegrid: false
+        guiStyle: 'bootstrap',
+        inlineEditing: {keys: true},
+        hidegrid: false,
+        iconSet: 'fontAwesome'
     };
 
-    $('#scenes').jqGrid($.extend(defaultOptions, {
+    $('#scenes').jqGrid($.extend({}, defaultOptions, {
         colModel: [
             {
                 name: 'name',
@@ -239,52 +193,207 @@ function initGrids() {
             }
         ],
         data: [],
-        beforeSelectRow: function(rowid, e) {
+        beforeSelectRow(rowid, e) {
             if ($(this).getGridParam('selrow') === rowid) {
+                load(scenes[e.target.innerText]);
                 return false;
-            } else {
-                return true;
+            }
+            return true;
+        },
+        onSelectRow(rowid, status, e) {
+            load(scenes[e.target.innerText]);
+            $('#scene-del').prop('disabled', false);
+            $('#scene-save').prop('disabled', false);
+            if (!$('#sequence-del').prop('disabled')) {
+                $('#step-new').prop('disabled', false);
             }
         },
-        onSelectRow: function (rowid, status, e) {
-            load(scenes[e.target.innerText]);
-        },
-        ondblClickRow: function (rowid, status, e) {
+        ondblClickRow(rowid, status, e) {
             const $this = $(this);
-            const savedRow = $this.jqGrid("getGridParam", "savedRow");
+            const savedRow = $this.jqGrid('getGridParam', 'savedRow');
 
             if (savedRow.length > 0 && savedRow[0].id !== rowid) {
-                $this.jqGrid("restoreRow", savedRow[0].id);
+                $this.jqGrid('restoreRow', savedRow[0].id);
             }
 
-            $this.jqGrid("editRow", rowid, {focusField: e.target});
+            $this.jqGrid('editRow', rowid, {focusField: e.target});
+        }
+    })).jqGrid('filterToolbar').jqGrid('gridResize');
+
+    $('#sequences').jqGrid($.extend({}, defaultOptions, {
+        actionsNavOptions: {
+            editbutton: false,
+            delbutton: false,
+            custom: [
+                {
+                    action: 'play',
+                    position: 'first',
+                    onClick(options) {
+                        const row = $('#sequences').jqGrid('getRowData', options.rowid);
+                        ipc.send('seqstart', {
+                            name: row.name,
+                            repeat: row.repeat !== 'false',
+                            shuffle: row.shuffle !== 'false',
+                            speed: parseFloat(row.speed)
+                        });
+                    }
+                },
+                /* {
+                    action: 'next',
+                    position: 'first',
+                    onClick: function (options) {
+                        alert('next, rowid=' + options.rowid);
+                    }
+                }, */
+                {
+                    action: 'stop',
+                    position: 'first',
+                    onClick(options) {
+                        const row = $('#sequences').jqGrid('getRowData', options.rowid);
+                        ipc.send('seqstop', row.name);
+                    }
+                }
+            ],
+            /* Nexticon: 'fa-step-forward',
+            nexttitle: 'Next Step', */
+            playicon: 'fa-play',
+            playtitle: 'Start',
+            stopicon: 'fa-stop',
+            stoptitle: 'Stop'
         },
-    })).jqGrid("filterToolbar").jqGrid("gridResize");
-
-
-    loadScenes();
-
-
-    $('#sequences').jqGrid($.extend(defaultOptions, {
         colModel: [
-            { name: 'name' },
-            { name: 'tools' }
+            {
+                name: 'name',
+                editable: true
+            },
+            {
+                name: 'speed',
+                search: false,
+                width: 48,
+                sortable: false,
+                editable: true,
+                align: 'right'
+            },
+            {
+                name: 'repeat',
+                search: false,
+                align: 'center',
+                width: 40,
+                sortable: false,
+                editable: true,
+                edittype: 'checkbox',
+                editoptions: {value: 'true:false'},
+                formatter: 'checkbox'
+            },
+            {
+                name: 'shuffle',
+                label: 'shuffle',
+                align: 'center',
+                search: false,
+                width: 40,
+                sortable: false,
+                editable: true,
+                edittype: 'checkbox',
+                editoptions: {value: 'true:false'},
+                formatter: 'checkbox'
+            },
+
+            {
+                name: 'act',
+                width: 80,
+                label: '',
+                search: false,
+                editable: false,
+                sortable: false,
+                template: 'actions'
+            }
         ],
         data: [],
+        beforeSelectRow(rowid) {
+            if ($(this).getGridParam('selrow') === rowid) {
+                return false;
+            }
+            return true;
+        },
         caption: 'Sequences',
-    })).jqGrid("filterToolbar").jqGrid("gridResize");
+        onSelectRow(rowid) {
+            loadSteps($('#sequences').jqGrid('getCell', rowid, 'name'));
+            $('#sequence-del').prop('disabled', false);
+            if (!$('#scene-save').prop('disabled')) {
+                $('#step-new').prop('disabled', false);
+            }
+        },
+        ondblClickRow(rowid, iRow, iCol) {
+            const $this = $(this);
+            const savedRow = $this.jqGrid('getGridParam', 'savedRow');
 
-    $('#steps').jqGrid($.extend(defaultOptions, {
+            if (savedRow.length > 0 && savedRow[0].id !== rowid) {
+                $this.jqGrid('restoreRow', savedRow[0].id);
+            }
+
+            $this.jqGrid('editRow', rowid, {focusField: iCol});
+        }
+    })).jqGrid('filterToolbar').jqGrid('gridResize');
+
+    $('#steps').jqGrid($.extend({}, defaultOptions, {
         colModel: [
-            { name: 'name' },
-            { name: 'tools' }
+            {
+                name: 'id',
+                width: 36,
+                align: 'right',
+                search: false,
+                editable: false,
+                sorttype: 'int',
+                firstsortorder: 'asc'
+            },
+            {
+                name: 'scene',
+                search: false,
+                sortable: false
+            },
+            {
+                name: 'hold',
+                width: 36,
+                align: 'right',
+                search: false,
+                sortable: false
+            },
+            {
+                name: 'trans',
+                width: 36,
+                align: 'right',
+                search: false,
+                sortable: false
+            }
         ],
         data: [],
         caption: 'Sequence Steps',
-    })).jqGrid("filterToolbar").jqGrid("gridResize");
+        beforeSelectRow(rowid) {
+            if ($(this).getGridParam('selrow') === rowid) {
+                return false;
+            }
+            return true;
+        },
+        onSelectRow() {
+            $('#step-del').prop('disabled', false);
+        }
+    })).jqGrid('filterToolbar').jqGrid('gridResize');
+
+    $('#steps').jqGrid('sortGrid', 'id', true, 'asc');
 
     resizeGrids();
     $(window).resize(resizeGrids);
+
+    ipc.on('scenes', (event, data) => {
+        scenes = JSON.parse(data);
+        loadScenes();
+    });
+    ipc.on('sequences', (event, data) => {
+        sequences = JSON.parse(data);
+        loadSequences();
+    });
+    ipc.send('getscenes');
+    ipc.send('getsequences');
 }
 
 function resizeGrids() {
@@ -300,14 +409,66 @@ function resizeGrids() {
         .jqGrid('gridResize');
     $('#steps')
         .jqGrid('setGridWidth', width)
-        .jqGrid('setGridHeight', height)
+        .jqGrid('setGridHeight', height + 20)
         .jqGrid('gridResize');
 }
 
+const sceneNames = {};
 function loadScenes() {
     const gridData = [];
+    $('#scenes').jqGrid('clearGridData');
+    $('#scenes-del').prop('disabled', true);
+    $('#scenes-save').prop('disabled', true);
+
     Object.keys(scenes).forEach((name, id) => {
-         gridData.push({id, name});
+        sceneNames[name] = id;
+        gridData.push({id, name});
     });
     $('#scenes').addRowData('id', gridData);
+    $('#scenes').jqGrid('sortGrid', 'name', true, 'asc');
 }
+
+const sequenceNames = {};
+function loadSequences() {
+    const gridData = [];
+    $('#sequences').jqGrid('clearGridData');
+    $('#sequences-del').prop('disabled', true);
+
+    Object.keys(sequences).forEach((name, id) => {
+        sequenceNames[name] = id;
+        if (!sequenceSettings[name]) {
+            sequenceSettings[name] = {speed: 1, repeat: true, shuffle: false};
+        }
+        gridData.push({
+            id,
+            name,
+            speed: sequenceSettings[name].speed,
+            repeat: sequenceSettings[name].repeat,
+            shuffle: sequenceSettings[name].shuffle
+        });
+    });
+    $('#sequences').addRowData('id', gridData);
+    $('#sequences').jqGrid('sortGrid', 'name', true, 'asc');
+}
+
+function loadSteps(seq) {
+    selectedSeq = seq;
+    const gridData = [];
+    $('#steps').jqGrid('clearGridData');
+    $('#step-del').prop('disabled', true);
+    $('#step-new').prop('disabled', true);
+    sequences[seq].forEach((step, id) => {
+        gridData.push({id, scene: step[0], trans: step[1], hold: step[2]});
+    });
+    $('#steps').addRowData('id', gridData);
+    $('#steps').jqGrid('sortGrid', 'id', true, 'asc');
+}
+
+ipc.on('seqstart', (event, seq) => {
+    runningSequences[seq] = true;
+    $('#jPlayButton_' + sequenceNames[seq]).addClass('running');
+});
+ipc.on('seqstop', (event, seq) => {
+    delete runningSequences[seq];
+    $('#jPlayButton_' + sequenceNames[seq]).removeClass('running');
+});
