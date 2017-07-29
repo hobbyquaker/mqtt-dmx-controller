@@ -7,10 +7,10 @@ Work in progress...
 
 ## Related
 
-* [mqtt-dmx-sequencer](https://github.com/hobbyquaker/mqtt-dmx-sequencer) is the headless counterpart to this 
+* [mqtt-dmx-sequencer](https://github.com/hobbyquaker/mqtt-dmx-sequencer) - the headless counterpart to this 
 Software. You can export scene- and sequence-files with mqtt-dmx-control that can be used with the mqtt-dmx-sequencer 
 for fully automated DMX Control.
-* [artnet](https://github.com/hobbyquaker/artnet) [Node.js](http://nodejs.org) module that can be used to send ArtDMX 
+* [artnet](https://github.com/hobbyquaker/artnet) - [Node.js](http://nodejs.org) module that can be used to send ArtDMX 
 packages to an [Art-Net](http://en.wikipedia.org/wiki/Art-Net) node.
 
 
