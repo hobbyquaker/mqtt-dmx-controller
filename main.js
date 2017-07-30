@@ -3,9 +3,17 @@ const electron = require('electron');
 const ipc = electron.ipcMain;
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
+const dialog = electron.dialog;
+const Menu = electron.Menu;
 
-const path = require('path');
+const windowStateKeeper = require('electron-window-state');
+const isDev = require('electron-is-dev');
+
+const fs = require('fs');
 const url = require('url');
+const path = require('path');
+const ppath = require('persist-path')('mqtt-dmx-controller');
+const mkdirp = require('mkdirp');
 
 const Mqtt = require('mqtt');
 const Artnet = require('artnet');
@@ -17,14 +25,48 @@ const config = {
 };
 
 let mainWindow;
+let settingsWindow;
+let menu;
+
 let mqttConnected;
 
 const runningSequences = {};
+let scenes;
+let sequences;
+let sequenceSettings;
 
 const debug = console.log;
 
-const scenes = require('./example-scenes.json');
-const sequences = require('./example-sequences.json');
+mkdirp(ppath);
+
+function saveScenes() {
+    fs.writeFileSync(path.join(ppath, 'scenes.json'), JSON.stringify(scenes, null, '  '));
+}
+
+function saveSequences() {
+    fs.writeFileSync(path.join(ppath, 'sequences.json'), JSON.stringify(sequences, null, '  '));
+}
+
+function saveSequenceSettings() {
+    fs.writeFileSync(path.join(ppath, 'sequence-settings.json'), JSON.stringify(sequenceSettings, null, '  '));
+}
+
+try {
+    scenes = require(path.join(ppath, 'scenes.json'));
+} catch (err) {
+    scenes = {};
+    saveScenes();
+}
+
+try {
+    sequences = require(path.join(ppath, 'sequences.json'));
+    sequenceSettings = require(path.join(ppath, 'sequence-settings.json'));
+} catch (err) {
+    sequences = {};
+    sequenceSettings = {};
+    saveSequences();
+    saveSequenceSettings();
+}
 
 const artnet = new Artnet({
     host: config.address
@@ -33,7 +75,9 @@ const artnet = new Artnet({
 artnet.data[0] = [];
 const sequencer = require('scene-sequencer')({
     setter(data) {
-        mainWindow.webContents.send('data', JSON.stringify(data));
+        if (mainWindow) {
+            mainWindow.webContents.send('data', JSON.stringify(data));
+        }
         artnet.set(data);
     },
 
@@ -42,8 +86,96 @@ const sequencer = require('scene-sequencer')({
     sequences
 });
 
+let menuTemplate = [
+    {
+        label: 'Settings',
+        submenu: [
+            {
+                role: 'channel',
+                label: 'Channels'
+            },
+            {
+                role: 'shortcuts',
+                label: 'Shortcuts'
+            },
+            {
+                role: 'artnet',
+                label: 'Art-Net'
+            },
+            {
+                role: 'mqtt',
+                label: 'MQTT'
+            }
+        ]
+    },
+    {
+        label: 'Export',
+        submenu: [
+            {
+                role: 'exportScenes',
+                label: 'Scenes'
+            },
+            {
+                role: 'exportSequences',
+                label: 'Sequences'
+            }
+        ]
+    }
+];
+
+if (process.platform === 'darwin') {
+    menuTemplate.unshift({
+        label: 'Arcticfox Monitor',
+        submenu: [
+            {
+                role: 'about',
+                label: 'About MQTT DMX Controller'
+            },
+            {
+                type: 'separator'
+            },
+            {
+                role: 'services',
+                submenu: []
+            },
+            {
+                type: 'separator'
+            },
+            {
+                role: 'hide',
+                label: 'Hide Arcticfox Config'
+            },
+            {
+                role: 'hideothers'
+            },
+            {
+                role: 'unhide'
+            },
+            {
+                type: 'separator'
+            },
+            {
+                role: 'quit',
+                label: 'Quit Arcticfox Config'
+            }
+        ]
+    });
+}
+
 function createWindow() {
-    mainWindow = new BrowserWindow({width: 1280, height: 720});
+    let mainWindowState = windowStateKeeper({
+        defaultWidth: 1280,
+        defaultHeight: 800
+    });
+
+    let devWindowState = {
+        width: 1280,
+        height: 800
+    };
+
+    let windowState = isDev ? devWindowState : mainWindowState;
+
+    mainWindow = new BrowserWindow(windowState);
 
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'index.html'),
@@ -51,10 +183,17 @@ function createWindow() {
         slashes: true
     }));
 
-    mainWindow.webContents.openDevTools();
+    if (isDev) mainWindow.webContents.openDevTools();
+
+    menu = Menu.buildFromTemplate(menuTemplate);
+
+    Menu.setApplicationMenu(menu);
+
+    //if (!isDev) mainWindowState.manage(mainWindow);
 
     mainWindow.on('closed', () => {
         mainWindow = null;
+        app.quit();
     });
 }
 
@@ -80,6 +219,10 @@ ipc.on('getsequences', event => {
     event.sender.send('sequences', JSON.stringify(sequences));
 });
 
+ipc.on('getsequenceSettings', event => {
+    event.sender.send('sequenceSettings', JSON.stringify(sequenceSettings));
+});
+
 ipc.on('data', (event, data) => {
     artnet.set(data, err => {
         if (err) {
@@ -100,12 +243,47 @@ ipc.on('seqstop', (event, data) => {
     }
 });
 
+ipc.on('saveSequenceSettings', (event, data) => {
+    sequenceSettings = JSON.parse(data);
+    saveSequenceSettings();
+});
+
+ipc.on('saveSequences', (event, data) => {
+    let tmp = JSON.parse(data);
+    let seqs = Object.keys(tmp);
+    Object.keys(sequences).forEach(s => {
+        if (seqs.indexOf(s) === -1) {
+            delete sequences[s];
+        }
+    });
+    seqs.forEach(s => {
+         sequences[s] = tmp[s];
+    });
+    saveSequences();
+});
+
+ipc.on('saveScenes', (event, data) => {
+    let tmp = JSON.parse(data);
+    let scs = Object.keys(tmp);
+    Object.keys(scenes).forEach(s => {
+        if (scs.indexOf(s) === -1) {
+            delete scenes[s];
+        }
+    });
+    scs.forEach(s => {
+        scenes[s] = tmp[s];
+    });
+    saveScenes();
+});
+
 sequencer.on('transition-conflict', ch => {
     debug('transition conflict channel', ch);
 });
 
 sequencer.on('step', step => {
-    mainWindow.webContents.send('seqstep', step);
+    if (mainWindow) {
+        mainWindow.webContents.send('seqstep', step);
+    }
 });
 
 debug('mqtt trying to connect', config.url);

@@ -2,13 +2,14 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Lighting</title>
+    <title>MQTT DMX Controller</title>
 
     <link rel="stylesheet" href="node_modules/font-awesome/css/font-awesome.min.css">
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="node_modules/bootstrap-slider/dist/css/bootstrap-slider.min.css">
     <link rel="stylesheet" href="node_modules/free-jqgrid/dist/css/ui.jqgrid.min.css">
+    <link rel="stylesheet" href="node_modules/jquery-ui/themes/base/sortable.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -30,6 +31,7 @@
         <div id="controls-sequences">
             <button id="sequence-del" class="btn btn-xs btn-danger" disabled>Delete</button>
             <button id="sequence-new" class="btn btn-xs btn-primary">New</button>
+            <button id="sequence-dup" class="btn btn-xs btn-primary" disabled>Duplicate</button>
         </div>
     </div>
 

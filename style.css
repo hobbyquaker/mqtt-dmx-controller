@@ -111,18 +111,39 @@ label.checkbox-container {
 }
 
 
-tr.trans {
-    background-color: lightblue;
+tr.trans, tr.trans td {
+    background: none !important;
+    background-image: none !important;
+    background-color: lightblue !important;
 }
 
-tr.hold {
-    background-color: cornflowerblue;
+tr.hold, tr.hold td {
+    background: none !important;
+    background-image: none !important;
+    background-color: cornflowerblue !important;
 }
 
 .running span.fa {
     color: red !important;
 }
 
-.slider-track-high {
+#mixer .slider-track-high {
     background-color: lightsteelblue;
+}
+
+#sequences div.slider {
+    width: calc(100% - 16px);
+}
+
+#sequences .tooltip-arrow {
+    display: none;
+}
+
+#sequences .tooltip {
+    margin-top: -3px;
+    font-size: 9px;
+}
+
+#sequences .tooltip-inner {
+    background-color: inherit;
 }

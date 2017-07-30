@@ -3,6 +3,7 @@
 const electron = require('electron');
 
 const ipc = electron.ipcRenderer;
+const remote = electron.remote;
 const $ = require('jquery');
 
 window.$ = $;
@@ -10,15 +11,26 @@ window.jQuery = $;
 
 require('./node_modules/bootstrap/dist/js/npm.js'); // eslint-disable-line import/no-unassigned-import
 require('./node_modules/bootstrap-slider/dist/bootstrap-slider.min'); // eslint-disable-line import/no-unassigned-import
+
+require('./node_modules/jquery-ui/ui/widget.js');
+require('./node_modules/jquery-ui/ui/data.js');
+require('./node_modules/jquery-ui/ui/scroll-parent.js');
+
+require('./node_modules/jquery-ui/ui/widgets/mouse.js');
+require('./node_modules/jquery-ui/ui/widgets/sortable.js');
+
 require('./node_modules/free-jqgrid/dist/jquery.jqgrid.min')(window, $); // eslint-disable-line import/no-unassigned-import
 
 const data = new Array(512).fill(null);
 
+const channelCount = 24;
+
 let scenes = {};
 let sequences = {};
-
-const sequenceSettings = {};
+let sequenceSettings = {};
 let selectedSeq;
+let selectedScene;
+let selectedStep;
 const runningSequences = {};
 
 function appendChannel(channel) {
@@ -43,17 +55,18 @@ function appendChannel(channel) {
         step: 1,
         tooltip: 'hide',
         orientation: 'vertical',
-        reversed: true
+        reversed: true,
+        focus: true
     }).on('slide', function (event) {
         const idx = parseInt($(this).data('channel'), 10) - 1;
         const $container = $(this).parent().parent();
         $container.find('input.channel-value').val(event.value);
-        if ($container.find('input.channel-active').is(':checked')) {
+        //if ($container.find('input.channel-active').is(':checked')) {
             data[idx] = event.value;
-        } else {
-            data[idx] = null;
-        }
-        update();
+        //} else {
+        //    data[idx] = null;
+        //}
+        update(true);
     });
 
     $('#channel-' + channel + ' input.channel-value').on('change input', function () {
@@ -79,10 +92,10 @@ function appendChannel(channel) {
     });
 }
 
-function update() {
+function update(all) {
     let last = 0;
     $('input.channel-active').each(function () {
-        if ($(this).is(':checked')) {
+        if (all || $(this).is(':checked')) {
             const ch = $(this).data('channel');
             if (ch > last) {
                 last = ch;
@@ -105,6 +118,18 @@ function load(d) {
         }
     });
     update();
+}
+
+function saveScene() {
+    let values = [];
+    for (let i = 1; i <= channelCount; i++) {
+        if ($('input.channel-active[data-channel="' + i + '"]').is(':checked')) {
+            values[i - 1] =  parseInt($('input.channel-value[data-channel="' + i + '"]').val(), 10);
+        } else {
+            values[i - 1] = null;
+        }
+    }
+    return values;
 }
 
 function updateData(d) {
@@ -141,7 +166,7 @@ ipc.on('seqstep', (event, step) => {
 });
 
 $(document).ready(() => {
-    for (let i = 1; i <= 24; i++) {
+    for (let i = 1; i <= channelCount; i++) {
         appendChannel(i);
     }
 
@@ -201,7 +226,10 @@ function initGrids() {
             return true;
         },
         onSelectRow(rowid, status, e) {
-            load(scenes[e.target.innerText]);
+            if (e.target) {
+                selectedScene = e.target.innerText;
+                load(scenes[e.target.innerText]);
+            }
             $('#scene-del').prop('disabled', false);
             $('#scene-save').prop('disabled', false);
             if (!$('#sequence-del').prop('disabled')) {
@@ -216,7 +244,21 @@ function initGrids() {
                 $this.jqGrid('restoreRow', savedRow[0].id);
             }
 
-            $this.jqGrid('editRow', rowid, {focusField: e.target});
+            $this.jqGrid('editRow', rowid, {
+                focusField: 'name',
+                aftersavefunc: function (id, j, row) {
+                    if (sceneNames[row.name] !== parseInt(id, 10)) {
+                        row.name = nextName(Object.keys(sceneNames), row.name);
+                        scenes[row.name] = scenes[selectedScene];
+                        delete scenes[selectedScene]
+                        ipc.send('saveScenes', JSON.stringify(scenes));
+                        selectedScene = row.name;
+                        loadScenes();
+                        $('#scenes').jqGrid('setSelection', sceneNames[selectedScene], true);
+                        $('#scenes #' + $('#scenes').jqGrid('getGridParam','selrow')).focus();
+                    }
+                }
+            });
         }
     })).jqGrid('filterToolbar').jqGrid('gridResize');
 
@@ -234,7 +276,7 @@ function initGrids() {
                             name: row.name,
                             repeat: row.repeat !== 'false',
                             shuffle: row.shuffle !== 'false',
-                            speed: parseFloat(row.speed)
+                            speed: $('#speed-slider-' + options.rowid).slider('getValue')
                         });
                     }
                 },
@@ -269,10 +311,13 @@ function initGrids() {
             {
                 name: 'speed',
                 search: false,
-                width: 48,
+                width: 160,
                 sortable: false,
-                editable: true,
-                align: 'right'
+                align: 'center',
+                editable: false,
+                formatter(cellvalue, options, rowObject) {
+                    return `<input value="${cellvalue}" type="number" class="speed-slider" id="speed-slider-${options.rowId}">`;
+                }
             },
             {
                 name: 'repeat',
@@ -283,7 +328,8 @@ function initGrids() {
                 editable: true,
                 edittype: 'checkbox',
                 editoptions: {value: 'true:false'},
-                formatter: 'checkbox'
+                formatter: 'checkbox',
+                formatoptions: {disabled: false}
             },
             {
                 name: 'shuffle',
@@ -295,7 +341,8 @@ function initGrids() {
                 editable: true,
                 edittype: 'checkbox',
                 editoptions: {value: 'true:false'},
-                formatter: 'checkbox'
+                formatter: 'checkbox',
+                formatoptions: {disabled: false}
             },
 
             {
@@ -319,6 +366,7 @@ function initGrids() {
         onSelectRow(rowid) {
             loadSteps($('#sequences').jqGrid('getCell', rowid, 'name'));
             $('#sequence-del').prop('disabled', false);
+            $('#sequence-dup').prop('disabled', false);
             if (!$('#scene-save').prop('disabled')) {
                 $('#step-new').prop('disabled', false);
             }
@@ -331,7 +379,93 @@ function initGrids() {
                 $this.jqGrid('restoreRow', savedRow[0].id);
             }
 
-            $this.jqGrid('editRow', rowid, {focusField: iCol});
+            $this.jqGrid('editRow', rowid,  {
+                focusField: 'name',
+                aftersavefunc: function (id, j, row) {
+                    if (sequenceNames[row.name] !== parseInt(id, 10)) {
+                        row.name = nextName(Object.keys(sequenceNames), row.name);
+                        sequences[row.name] = sequences[selectedSeq];
+                        ipc.send('seqstop', selectedSeq);
+                        delete sequences[selectedSeq]
+                        ipc.send('saveSequences', JSON.stringify(sequences));
+                        selectedSeq = row.name;
+                        loadSequences();
+                        $('#sequences').jqGrid('setSelection', sequenceNames[selectedSeq], true);
+                        $('#sequences #' + $('#sequences').jqGrid('getGridParam','selrow')).focus();
+                    }
+                }
+            });
+        },
+        onEditRow() {
+
+        },
+        gridComplete() {
+            $('[aria-describedby="sequences_repeat"] input[type="checkbox"]').change(function () {
+                const id = $(this).parents('tr').prop('id');
+                const row = $('#sequences').jqGrid('getRowData', id);
+                const settings = {
+                    id,
+                    name: row.name,
+                    repeat: row.repeat !== 'false',
+                    shuffle: row.shuffle !== 'false',
+                    speed: $('#speed-slider-' + id).slider('getValue')
+                };
+                if (runningSequences[row.name] === 'play') {
+                    ipc.send('seqstart', settings);
+                }
+                sequenceSettings[row.name] = settings;
+                ipc.send('saveSequenceSettings', JSON.stringify(sequenceSettings));
+            });
+            $('[aria-describedby="sequences_shuffle"] input[type="checkbox"]').change(function () {
+                const id = $(this).parents('tr').prop('id');
+                const row = $('#sequences').jqGrid('getRowData', id);
+                const settings = {
+                    id,
+                    name: row.name,
+                    repeat: row.repeat !== 'false',
+                    shuffle: row.shuffle !== 'false',
+                    speed: $('#speed-slider-' + id).slider('getValue')
+                };
+                if (runningSequences[row.name] === 'play') {
+                    ipc.send('seqstart', settings);
+                }
+                sequenceSettings[row.name] = settings;
+                ipc.send('saveSequenceSettings', JSON.stringify(sequenceSettings));
+            });
+
+            $('.speed-slider').each(function () {
+                $(this).slider({
+                    min: 0.05,
+                    max: 40,
+                    step: 0.05,
+                    scale: 'logarithmic',
+                    tooltip: 'always',
+                    value: parseFloat($(this).val()) || 1,
+                    focus: true
+                });
+                $(this).on('slide change', event => {
+                    if (typeof event.value.newValue !== 'undefined') {
+                        event.value = event.value.newValue;
+                    }
+                    const id = event.target.id.replace('speed-slider-', '');
+                    const row = $('#sequences').jqGrid('getRowData', id);
+                    const settings = {
+                        id,
+                        name: row.name,
+                        repeat: row.repeat !== 'false',
+                        shuffle: row.shuffle !== 'false',
+                        speed: event.value
+                    };
+                    const gridData = $('#sequences').jqGrid('getGridParam').data;
+                    gridData[id] = settings;
+                    $('#sequences').jqGrid('setGridParam', {data: gridData});
+                    if (runningSequences[row.name] === 'play') {
+                        ipc.send('seqstart', settings);
+                    }
+                    sequenceSettings[row.name] = settings;
+                    ipc.send('saveSequenceSettings', JSON.stringify(sequenceSettings));
+                });
+            });
         }
     })).jqGrid('filterToolbar').jqGrid('gridResize');
 
@@ -349,12 +483,14 @@ function initGrids() {
             {
                 name: 'scene',
                 search: false,
-                sortable: false
+                sortable: false,
+                editable: false
             },
             {
                 name: 'hold',
                 width: 36,
                 align: 'right',
+                editable: true,
                 search: false,
                 sortable: false
             },
@@ -362,6 +498,7 @@ function initGrids() {
                 name: 'trans',
                 width: 36,
                 align: 'right',
+                editable: true,
                 search: false,
                 sortable: false
             }
@@ -374,10 +511,41 @@ function initGrids() {
             }
             return true;
         },
-        onSelectRow() {
+        onSelectRow(rowId) {
+            selectedStep = rowId;
             $('#step-del').prop('disabled', false);
+        },
+        ondblClickRow(rowid, iRow, iCol) {
+            const $this = $(this);
+            const savedRow = $this.jqGrid('getGridParam', 'savedRow');
+
+            if (savedRow.length > 0 && savedRow[0].id !== rowid) {
+                $this.jqGrid('restoreRow', savedRow[0].id);
+            }
+
+            $this.jqGrid('editRow', rowid, {
+                focusField: iCol,
+                aftersavefunc: function (id, j, row) {
+                    sequences[selectedSeq][id] = [row.scene, row.trans, row.hold];
+                    ipc.send('seqstop', selectedSeq);
+                    ipc.send('saveSequences', JSON.stringify(sequences));
+                }
+            });
         }
-    })).jqGrid('filterToolbar').jqGrid('gridResize');
+    })).jqGrid('sortableRows', {
+        cursor: 'move',
+        update : function () {
+            const rows = $('#steps').jqGrid('getRowData');
+            rows.forEach((row, id) => {
+                row.id = id;
+                sequences[selectedSeq][id] = [row.scene, row.trans, row.hold];
+                ipc.send('seqstop', selectedSeq);
+                ipc.send('saveSequences', JSON.stringify(sequences));
+                loadSteps(selectedSeq);
+            });
+
+        }
+    }).jqGrid('filterToolbar').jqGrid('gridResize');
 
     $('#steps').jqGrid('sortGrid', 'id', true, 'asc');
 
@@ -390,6 +558,10 @@ function initGrids() {
     });
     ipc.on('sequences', (event, data) => {
         sequences = JSON.parse(data);
+        ipc.send('getsequenceSettings');
+    });
+    ipc.on('sequenceSettings', (event, data) => {
+        sequenceSettings = JSON.parse(data);
         loadSequences();
     });
     ipc.send('getscenes');
@@ -413,13 +585,13 @@ function resizeGrids() {
         .jqGrid('gridResize');
 }
 
-const sceneNames = {};
+let sceneNames = {};
 function loadScenes() {
     const gridData = [];
     $('#scenes').jqGrid('clearGridData');
     $('#scenes-del').prop('disabled', true);
     $('#scenes-save').prop('disabled', true);
-
+    sceneNames = {};
     Object.keys(scenes).forEach((name, id) => {
         sceneNames[name] = id;
         gridData.push({id, name});
@@ -428,12 +600,13 @@ function loadScenes() {
     $('#scenes').jqGrid('sortGrid', 'name', true, 'asc');
 }
 
-const sequenceNames = {};
+let sequenceNames = {};
 function loadSequences() {
     const gridData = [];
     $('#sequences').jqGrid('clearGridData');
     $('#sequences-del').prop('disabled', true);
 
+    sequenceNames = {};
     Object.keys(sequences).forEach((name, id) => {
         sequenceNames[name] = id;
         if (!sequenceSettings[name]) {
@@ -447,6 +620,7 @@ function loadSequences() {
             shuffle: sequenceSettings[name].shuffle
         });
     });
+    ipc.send('saveSequenceSettings', JSON.stringify(sequenceSettings));
     $('#sequences').addRowData('id', gridData);
     $('#sequences').jqGrid('sortGrid', 'name', true, 'asc');
 }
@@ -456,7 +630,6 @@ function loadSteps(seq) {
     const gridData = [];
     $('#steps').jqGrid('clearGridData');
     $('#step-del').prop('disabled', true);
-    $('#step-new').prop('disabled', true);
     sequences[seq].forEach((step, id) => {
         gridData.push({id, scene: step[0], trans: step[1], hold: step[2]});
     });
@@ -465,10 +638,121 @@ function loadSteps(seq) {
 }
 
 ipc.on('seqstart', (event, seq) => {
-    runningSequences[seq] = true;
+    runningSequences[seq] = 'play';
     $('#jPlayButton_' + sequenceNames[seq]).addClass('running');
+    $('#jPauseButton_' + sequenceNames[seq]).removeClass('running');
 });
 ipc.on('seqstop', (event, seq) => {
     delete runningSequences[seq];
     $('#jPlayButton_' + sequenceNames[seq]).removeClass('running');
+    $('#jPauseButton_' + sequenceNames[seq]).removeClass('running');
+});
+ipc.on('seqpause', (event, seq) => {
+    runningSequences[seq] = 'pause';
+    $('#jPauseButton_' + sequenceNames[seq]).addClass('running');
+    $('#jPlayButton_' + sequenceNames[seq]).removeClass('running');
+});
+
+$('#step-new').click(function () {
+    if (sequences[selectedSeq].length > 0) {
+        const lastStep = sequences[selectedSeq][sequences[selectedSeq].length - 1];
+        sequences[selectedSeq].push([selectedScene, lastStep[1], lastStep[2]]);
+    } else {
+        sequences[selectedSeq].push([selectedScene, 1, 1]);
+    }
+    ipc.send('seqstop', selectedSeq);
+    ipc.send('saveSequences', JSON.stringify(sequences));
+    loadSteps(selectedSeq);
+});
+
+$('#step-del').click(function () {
+    sequences[selectedSeq].splice(selectedStep, 1);
+    ipc.send('seqstop', selectedSeq);
+    ipc.send('saveSequences', JSON.stringify(sequences));
+    loadSteps(selectedSeq);
+});
+
+function nextName(names, name) {
+    const base = name.replace(/_[0-9]+$/, '');
+    let i = 0;
+    while (names.indexOf(name) !== -1) {
+        name = base + '_' + (i++)
+    }
+    return name;
+}
+
+$('#sequence-new').click(function () {
+    const name = nextName(Object.keys(sequenceNames), 'sequence');
+    sequences[name] = [];
+    ipc.send('saveSequences', JSON.stringify(sequences));
+    loadSequences();
+    selectedSeq = name;
+    $('#sequences').jqGrid('setSelection', sequenceNames[selectedSeq], true);
+    $('#sequences #' + $('#sequences').jqGrid('getGridParam','selrow')).focus();
+});
+
+
+$('#sequence-dup').click(function () {
+    const name = nextName(Object.keys(sequenceNames), selectedSeq);
+    sequences[name] = $.extend([], sequences[selectedSeq]);
+    ipc.send('saveSequences', JSON.stringify(sequences));
+    loadSequences();
+    selectedSeq = name;
+    $('#sequences').jqGrid('setSelection', sequenceNames[selectedSeq], true);
+    $('#sequences #' + $('#sequences').jqGrid('getGridParam','selrow')).focus();
+});
+
+$('#sequence-del').click(function () {
+    remote.dialog.showMessageBox({
+        message: `Really delete Sequence "${selectedSeq}"?`,
+        buttons: [
+            'Delete',
+            'Cancel'
+        ]
+    }, res => {
+        if (res === 0) {
+            delete sequences[selectedSeq];
+            ipc.send('saveSequences', JSON.stringify(sequences));
+            loadSequences();
+            $('#step-new').prop('disabled', true);
+            selectedSeq = null;
+        }
+    });
+});
+
+$('#scene-del').click(function () {
+
+    remote.dialog.showMessageBox({
+        message: `Really delete Scene "${selectedScene}"?`,
+        buttons: [
+            'Delete',
+            'Cancel'
+        ]
+    }, res => {
+        if (res === 0) {
+            delete scenes[selectedScene];
+            ipc.send('saveScenes', JSON.stringify(scenes));
+            loadScenes();
+            selectedScene = null;
+            $('#scene-del').prop('disabled', true);
+            $('#scene-save').prop('disabled', true);
+            $('#step-new').prop('disabled', true);
+        }
+    });
+});
+
+$('#scene-save').click(function () {
+    scenes[selectedScene] = saveScene();
+    ipc.send('saveScenes', JSON.stringify(scenes));
+    loadScenes();
+});
+
+$('#scene-new').click(function () {
+    const name = nextName(Object.keys(scenes), 'scene');
+    scenes[name] = saveScene();
+    ipc.send('saveScenes', JSON.stringify(scenes));
+    loadScenes();
+    selectedScene = name;
+    $('#scenes').jqGrid('setSelection', sceneNames[name], true);
+    $('#scenes #' + $('#scenes').jqGrid('getGridParam','selrow')).focus();
 });

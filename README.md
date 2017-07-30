@@ -1,4 +1,4 @@
-# mqtt-dmx-control
+# MQTT DMX Controller
 
 > A simple ArtNet / DMX Controller with MQTT Interface
 
