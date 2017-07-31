@@ -18,12 +18,6 @@ const mkdirp = require('mkdirp');
 const Mqtt = require('mqtt');
 const Artnet = require('artnet');
 
-const config = {
-    address: '172.16.23.15',
-    url: 'mqtt://127.0.0.1',
-    name: 'dmx'
-};
-
 let mainWindow;
 let settingsWindow;
 let menu;
@@ -34,6 +28,8 @@ const runningSequences = {};
 let scenes;
 let sequences;
 let sequenceSettings;
+let shortcuts;
+let config;
 
 const debug = console.log;
 
@@ -51,6 +47,34 @@ function saveSequenceSettings() {
     fs.writeFileSync(path.join(ppath, 'sequence-settings.json'), JSON.stringify(sequenceSettings, null, '  '));
 }
 
+function saveShortcuts() {
+    fs.writeFileSync(path.join(ppath, 'shortcuts.json'), JSON.stringify(shortcuts, null, '  '));
+}
+
+function saveConfig() {
+    fs.writeFileSync(path.join(ppath, 'config.json'), JSON.stringify(config, null, '  '));
+}
+
+try {
+    config = require(path.join(ppath, 'config.json'));
+} catch (err) {
+    config = {
+        address: '255.255.255.255',
+        port: 6454,
+        url: 'mqtt://127.0.0.1',
+        name: 'dmx',
+        channels: 24
+    };
+    saveConfig();
+}
+
+try {
+    shortcuts = require(path.join(ppath, 'shortcuts.json'));
+} catch (err) {
+    shortcuts = [];
+    saveShortcuts();
+}
+
 try {
     scenes = require(path.join(ppath, 'scenes.json'));
 } catch (err) {
@@ -60,11 +84,15 @@ try {
 
 try {
     sequences = require(path.join(ppath, 'sequences.json'));
-    sequenceSettings = require(path.join(ppath, 'sequence-settings.json'));
 } catch (err) {
     sequences = {};
-    sequenceSettings = {};
     saveSequences();
+}
+
+try {
+    sequenceSettings = require(path.join(ppath, 'sequence-settings.json'));
+} catch (err) {
+    sequenceSettings = {};
     saveSequenceSettings();
 }
 
@@ -86,38 +114,54 @@ const sequencer = require('scene-sequencer')({
     sequences
 });
 
-let menuTemplate = [
+const menuTemplate = [
     {
         label: 'Settings',
         submenu: [
             {
-                role: 'channel',
-                label: 'Channels'
+                label: 'Configuration',
+                click() {
+                    createSettingsWindow();
+                }
             },
             {
-                role: 'shortcuts',
-                label: 'Shortcuts'
-            },
-            {
-                role: 'artnet',
-                label: 'Art-Net'
-            },
-            {
-                role: 'mqtt',
-                label: 'MQTT'
+                label: 'Edit Shortcuts',
+                type: 'checkbox',
+                click(item) {
+                    mainWindow.webContents.send('shortcutedit', item.checked);
+                }
             }
         ]
+    },
+    {
+        label: 'Edit Shortcuts'
     },
     {
         label: 'Export',
         submenu: [
             {
-                role: 'exportScenes',
-                label: 'Scenes'
+                label: 'Scenes',
+                click() {
+                    electron.dialog.showSaveDialog({
+                        title: 'Export Scenes'
+                    }, filename => {
+                        if (filename) {
+                            fs.writeFileSync(filename, JSON.stringify(scenes, null, '  '));
+                        }
+                    });
+                }
             },
             {
-                role: 'exportSequences',
-                label: 'Sequences'
+                label: 'Sequences',
+                click() {
+                    electron.dialog.showSaveDialog({
+                        title: 'Export Sequences'
+                    }, filename => {
+                        if (filename) {
+                            fs.writeFileSync(filename, JSON.stringify(sequences, null, '  '));
+                        }
+                    });
+                }
             }
         ]
     }
@@ -143,7 +187,7 @@ if (process.platform === 'darwin') {
             },
             {
                 role: 'hide',
-                label: 'Hide Arcticfox Config'
+                label: 'Hide MQTT DMX Controller'
             },
             {
                 role: 'hideothers'
@@ -156,24 +200,24 @@ if (process.platform === 'darwin') {
             },
             {
                 role: 'quit',
-                label: 'Quit Arcticfox Config'
+                label: 'Quit MQTT DMX Controller'
             }
         ]
     });
 }
 
-function createWindow() {
-    let mainWindowState = windowStateKeeper({
+function createWindows() {
+    const mainWindowState = windowStateKeeper({
         defaultWidth: 1280,
         defaultHeight: 800
     });
 
-    let devWindowState = {
+    const devWindowState = {
         width: 1280,
         height: 800
     };
 
-    let windowState = isDev ? devWindowState : mainWindowState;
+    const windowState = isDev ? devWindowState : mainWindowState;
 
     mainWindow = new BrowserWindow(windowState);
 
@@ -183,13 +227,15 @@ function createWindow() {
         slashes: true
     }));
 
-    if (isDev) mainWindow.webContents.openDevTools();
+    if (isDev) {
+        mainWindow.webContents.openDevTools();
+    }
 
     menu = Menu.buildFromTemplate(menuTemplate);
 
     Menu.setApplicationMenu(menu);
 
-    //if (!isDev) mainWindowState.manage(mainWindow);
+    // If (!isDev) mainWindowState.manage(mainWindow);
 
     mainWindow.on('closed', () => {
         mainWindow = null;
@@ -197,7 +243,32 @@ function createWindow() {
     });
 }
 
-app.on('ready', createWindow);
+function createSettingsWindow() {
+    settingsWindow = new BrowserWindow({
+        width: 768,
+        height: 480,
+        modal: true,
+        parent: mainWindow,
+        show: false
+    });
+
+    settingsWindow.loadURL(url.format({
+        pathname: path.join(__dirname, 'settings.html'),
+        protocol: 'file:',
+        slashes: true
+    }));
+
+    settingsWindow.once('ready-to-show', () => {
+        settingsWindow.webContents.send('config', config);
+        settingsWindow.show();
+    })
+
+
+    //settingsWindow.webContents.openDevTools();
+
+}
+
+app.on('ready', createWindows);
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -207,8 +278,16 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
     if (mainWindow === null) {
-        createWindow();
+        createWindows();
     }
+});
+
+ipc.on('getshortcuts', event => {
+    event.sender.send('shortcuts', JSON.stringify(shortcuts));
+});
+
+ipc.on('getchannels', event => {
+    event.sender.send('channels', config.channels);
 });
 
 ipc.on('getscenes', event => {
@@ -249,22 +328,22 @@ ipc.on('saveSequenceSettings', (event, data) => {
 });
 
 ipc.on('saveSequences', (event, data) => {
-    let tmp = JSON.parse(data);
-    let seqs = Object.keys(tmp);
+    const tmp = JSON.parse(data);
+    const seqs = Object.keys(tmp);
     Object.keys(sequences).forEach(s => {
         if (seqs.indexOf(s) === -1) {
             delete sequences[s];
         }
     });
     seqs.forEach(s => {
-         sequences[s] = tmp[s];
+        sequences[s] = tmp[s];
     });
     saveSequences();
 });
 
 ipc.on('saveScenes', (event, data) => {
-    let tmp = JSON.parse(data);
-    let scs = Object.keys(tmp);
+    const tmp = JSON.parse(data);
+    const scs = Object.keys(tmp);
     Object.keys(scenes).forEach(s => {
         if (scs.indexOf(s) === -1) {
             delete scenes[s];
@@ -274,6 +353,11 @@ ipc.on('saveScenes', (event, data) => {
         scenes[s] = tmp[s];
     });
     saveScenes();
+});
+
+ipc.on('saveShortcuts', (event, data) => {
+    shortcuts = JSON.parse(data);
+    saveShortcuts();
 });
 
 sequencer.on('transition-conflict', ch => {
@@ -394,3 +478,12 @@ function updateSequence(sequence, speed, shuffle, repeat) {
         delete runningSequences[sequence];
     });
 }
+
+ipc.on('saveConfig', (event, c) => {
+    console.log('saveConfig');
+    config = c;
+    saveConfig();
+    app.relaunch();
+    mainWindow.destroy();
+    app.quit();
+});

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MQTT DMX Controller</title>
+
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+
+<body>
+
+<div class="settings">
+    <div id="settings-container">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <h4>Channels</h4>
+                <form class="form-inline">
+                    <div class="form-group">
+                <label class="first-label" for="settings-channels">Count</label>
+                <input type="number" class="form-control" id="settings-channels" min="24" max="512">
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <h4>Art-Net</h4>
+                <form class="form-inline">
+                    <div class="form-group">
+                <label class="first-label" for="settings-channels">Host</label>
+                <input type="text" class="form-control" id="settings-artnet-host">
+                    </div>
+                    <div class="form-group">
+                <label for="settings-channels">Port</label>
+                <input type="number" class="form-control" id="settings-artnet-port" min="1" max="65535">
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <h4>MQTT</h4>
+                <form class="form-inline">
+                    <div class="form-group">
+                <label class="first-label" for="settings-channels">URL</label>
+                <input type="text" size="56" class="form-control" id="settings-mqtt-url">
+                    </div>
+                    <div class="form-group">
+                <label class="first-label" for="settings-channels">Prefix</label>
+                <input type="text" size="16" class="form-control" id="settings-mqtt-prefix">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="settings-footer">
+        <button class="btn btn-danger" id="save">Save & Restart</button>
+        <button class="btn btn-primary" id="close">Cancel</button>
+    </div>
+</div>
+<script>
+    require('./renderer-settings.js');
+</script>
+</body>
+</html>

@@ -50,7 +50,7 @@ body {
     height: 66px;
 }
 
-#shortcuts {
+#shortcuts, #shortcutsedit {
     width: 100%;
     display: flex;
 }
@@ -61,7 +61,9 @@ body {
     width: 8%;
     margin-right: 2px;
     margin-left: 2px;
-    margininfo1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-shadow: none;
 }
 
 #mixer-container {
@@ -146,4 +148,86 @@ tr.hold, tr.hold td {
 
 #sequences .tooltip-inner {
     background-color: inherit;
+}
+
+#shortcutsedit-container button {
+    display: inline-block;
+    width: calc(50% - 3px);
+    font-size: 10px;
+    font-weight: normal;
+    text-shadow: none;
+}
+
+#shortcutsedit-container {
+    margin-left: 2px;
+    margin-bottom: 5px;
+    width: calc(100% - 6px);
+    height: 66px;
+    padding: 6px;
+}
+
+#shortcutsedit-container span {
+    display: block;
+    font-size: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+#shortcutsedit {
+    padding-top: 6px;
+}
+
+.shortcutedit-box {
+    display: block;
+    flex-grow: 1;
+    width: 8%;
+    margin-right: 2px;
+    margin-left: 2px;
+    border: 1px solid lightgrey;
+    border-radius: 3px;
+    padding-left: 2px;
+    height: 40px;
+}
+
+#start {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #fff;
+    z-index: 100000;
+}
+
+#sequences button {
+    text-shadow: none !important;
+}
+
+#settings {
+
+}
+
+#settings-container {
+    padding: 12px;
+    height: calc(100vh - 46px);
+    display: block;
+}
+
+#settings-footer {
+    height: 40px;
+    width: 100%;
+    padding-right: 12px;
+    padding-bottom: 12px;
+    display: block;
+    text-align: right;
+}
+
+.first-label {
+    width: 50px;
+    text-align: right;
+}
+
+#settings .panel {
+    width: 400px;
 }
