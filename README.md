@@ -2,7 +2,7 @@
 
 [![Dependency Status](https://david-dm.org/hobbyquaker/mqtt-dmx-controller/status.svg)](https://david-dm.org/hobbyquaker/mqtt-dmx-controller)
 [![macOS and Linux Build Status](https://travis-ci.org/hobbyquaker/mqtt-dmx-controller.svg?branch=master)](https://travis-ci.org/hobbyquaker/mqtt-dmx-controller)
-[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/hobbyquaker/mqtt-dmx-controller?branch=master&svg=true)](https://ci.appveyor.com/api/projects/status/github/hobbyquaker/mqtt-dmx-controller?branch=master&svg=true)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/hobbyquaker/mqtt-dmx-controller?branch=master&svg=true)](https://ci.appveyor.com/project/hobbyquaker/mqtt-dmx-controller)
 [![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
 [![License][mit-badge]][mit-url]
 
