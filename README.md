@@ -1,15 +1,43 @@
 # MQTT DMX Controller
 
+[![Dependency Status](https://david-dm.org/hobbyquaker/mqtt-dmx-controller/status.svg)](https://david-dm.org/hobbyquaker/mqtt-dmx-controller)
+[![Build Status](https://travis-ci.org/hobbyquaker/mqtt-dmx-controller.svg?branch=master)](https://travis-ci.org/hobbyquaker/mqtt-dmx-controller)
+[![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
+[![License][mit-badge]][mit-url]
+
 > A simple ArtNet / DMX Controller with MQTT Interface
 
-Work in progress...
+![Screenshot](screenshot.png "Screenshot")
+
+
+## Install
+
+#### macOS
+
+Go to the [latest release page](https://github.com/hobbyquaker/mqtt-dmx-controller/releases/latest) and download the 
+mqtt-dmx-controller-x.x.x.dmg file.
+
+#### Linux
+
+On the [latest release page](https://github.com/hobbyquaker/mqtt-dmx-controller/releases/latest) you can find a .deb 
+file for Ubuntu and Debian and a .tar.gz that should work on other distributions.
+
+
+## Usage
+
+Should be quite self-explanatory when you're experienced with DMX Controllers. If you have questions please open a 
+[Issue](https://github.com/hobbyquaker/mqtt-dmx-controller/issues/new).
+
+Beside the normal operation like many other DMX Controllers it's also possible to use MQTT to set channel values, 
+activate scenes and control sequences via MQTT. The topics and payloads used for this are the same as described in the
+[mqtt-dmx-sequencer](https://github.com/hobbyquaker/mqtt-dmx-sequencer) documentation.
 
 
 ## Related
 
 * [mqtt-dmx-sequencer](https://github.com/hobbyquaker/mqtt-dmx-sequencer) - the headless counterpart to this 
-Software. You can export scene- and sequence-files with mqtt-dmx-control that can be used with the mqtt-dmx-sequencer 
-for fully automated DMX Control.
+Software. You can export scene- and sequence-files from mqtt-dmx-controller that can be used with the mqtt-dmx-sequencer 
+for fully automated and headless DMX Control.
 * [artnet](https://github.com/hobbyquaker/artnet) - [Node.js](http://nodejs.org) module that can be used to send ArtDMX 
 packages to an [Art-Net](http://en.wikipedia.org/wiki/Art-Net) node.
 
