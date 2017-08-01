@@ -29,7 +29,7 @@ Should be quite self-explanatory when you're experienced with DMX Controllers. I
 [Issue](https://github.com/hobbyquaker/mqtt-dmx-controller/issues/new).
 
 Beside the normal operation like many other DMX Controllers it's also possible to use MQTT to set channel values, 
-activate scenes and control sequences via MQTT. The topics and payloads used for this are the same as described in the
+activate scenes and control sequences. The topics and payloads used for this are the same as described in the
 [mqtt-dmx-sequencer](https://github.com/hobbyquaker/mqtt-dmx-sequencer) documentation.
 
 
