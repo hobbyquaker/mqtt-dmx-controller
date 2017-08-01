@@ -1,4 +1,5 @@
 .idea
 .travis.yml
+.appveyor.yml
 npm-debug.log
 dist
