@@ -1,7 +1,8 @@
 # MQTT DMX Controller
 
 [![Dependency Status](https://david-dm.org/hobbyquaker/mqtt-dmx-controller/status.svg)](https://david-dm.org/hobbyquaker/mqtt-dmx-controller)
-[![Build Status](https://travis-ci.org/hobbyquaker/mqtt-dmx-controller.svg?branch=master)](https://travis-ci.org/hobbyquaker/mqtt-dmx-controller)
+[![macOS and Linux Build Status](https://travis-ci.org/hobbyquaker/mqtt-dmx-controller.svg?branch=master)](https://travis-ci.org/hobbyquaker/mqtt-dmx-controller)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/hobbyquaker/mqtt-dmx-controller?branch=master&svg=true)](https://ci.appveyor.com/api/projects/status/github/hobbyquaker/mqtt-dmx-controller?branch=master&svg=true)
 [![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
 [![License][mit-badge]][mit-url]
 
@@ -21,6 +22,11 @@ mqtt-dmx-controller-x.x.x.dmg file.
 
 On the [latest release page](https://github.com/hobbyquaker/mqtt-dmx-controller/releases/latest) you can find a .deb 
 file for Ubuntu and Debian and a .tar.gz that should work on other distributions.
+
+#### Windows
+
+On the [latest release page](https://github.com/hobbyquaker/mqtt-dmx-controller/releases/latest) you can find 
+mqtt-dmx-controller-setup-x.x.x.exe that should work under 64bit Windows.
 
 
 ## Usage
