@@ -3,15 +3,16 @@ const electron = require('electron');
 const ipc = electron.ipcMain;
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
-const dialog = electron.dialog;
+const dialog = electron.dialog; // eslint-disable-line no-unused-vars
 const Menu = electron.Menu;
-
-const windowStateKeeper = require('electron-window-state');
-const isDev = require('electron-is-dev');
 
 const fs = require('fs');
 const url = require('url');
 const path = require('path');
+
+const windowStateKeeper = require('electron-window-state');
+const isDev = require('electron-is-dev');
+
 const ppath = require('persist-path')('mqtt-dmx-controller');
 const mkdirp = require('mkdirp');
 
@@ -261,11 +262,9 @@ function createSettingsWindow() {
     settingsWindow.once('ready-to-show', () => {
         settingsWindow.webContents.send('config', config);
         settingsWindow.show();
-    })
+    });
 
-
-    //settingsWindow.webContents.openDevTools();
-
+    // SettingsWindow.webContents.openDevTools();
 }
 
 app.on('ready', createWindows);

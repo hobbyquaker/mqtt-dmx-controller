@@ -1,3 +1,5 @@
+/* global window */
+
 const electron = require('electron');
 
 const ipc = electron.ipcRenderer;
@@ -9,13 +11,12 @@ window.jQuery = $;
 
 require('./node_modules/bootstrap/dist/js/npm.js'); // eslint-disable-line import/no-unassigned-import
 
-
-$('#close').click(function () {
-    let window = remote.getCurrentWindow();
+$('#close').click(() => {
+    const window = remote.getCurrentWindow();
     window.close();
 });
 
-$('#save').click(function () {
+$('#save').click(() => {
     ipc.send('saveConfig', {
         url: $('#settings-mqtt-url').val(),
         name: $('#settings-mqtt-prefix').val(),
@@ -23,7 +24,7 @@ $('#save').click(function () {
         port: $('#settings-artnet-port').val(),
         channels: $('#settings-channels').val()
     });
-    let window = remote.getCurrentWindow();
+    const window = remote.getCurrentWindow();
     window.close();
 });
 

@@ -1,4 +1,5 @@
 /* global window, document */
+/* eslint-disable import/no-unassigned-import */
 
 const electron = require('electron');
 
@@ -9,8 +10,8 @@ const $ = require('jquery');
 window.$ = $;
 window.jQuery = $;
 
-require('./node_modules/bootstrap/dist/js/npm.js'); // eslint-disable-line import/no-unassigned-import
-require('./node_modules/bootstrap-slider/dist/bootstrap-slider.min'); // eslint-disable-line import/no-unassigned-import
+require('./node_modules/bootstrap/dist/js/npm.js');
+require('./node_modules/bootstrap-slider/dist/bootstrap-slider.min');
 
 require('./node_modules/jquery-ui/ui/widget.js');
 require('./node_modules/jquery-ui/ui/data.js');
@@ -19,15 +20,17 @@ require('./node_modules/jquery-ui/ui/scroll-parent.js');
 require('./node_modules/jquery-ui/ui/widgets/mouse.js');
 require('./node_modules/jquery-ui/ui/widgets/sortable.js');
 
-require('./node_modules/free-jqgrid/dist/jquery.jqgrid.min')(window, $); // eslint-disable-line import/no-unassigned-import
+require('./node_modules/free-jqgrid/dist/jquery.jqgrid.min')(window, $);
 
 const data = new Array(512).fill(null);
 
 let channelCount;
 
 let scenes = {};
+let sceneNames = {};
 let sequences = {};
 let sequenceSettings = {};
+let sequenceNames = {};
 let shortcuts = [];
 let selectedSeq;
 let selectedScene;
@@ -176,7 +179,6 @@ $(document).ready(() => {
         load(new Array(512).fill(0));
         initGrids();
     });
-
 });
 
 function initGrids() {
@@ -219,7 +221,7 @@ function initGrids() {
                 $('#step-new').prop('disabled', false);
             }
         },
-        ondblClickRow(rowid, status, e) {
+        ondblClickRow(rowid) {
             const $this = $(this);
             const savedRow = $this.jqGrid('getGridParam', 'savedRow');
 
@@ -301,7 +303,7 @@ function initGrids() {
                 sortable: false,
                 align: 'center',
                 editable: false,
-                formatter(cellvalue, options, rowObject) {
+                formatter(cellvalue, options) {
                     return `<input value="${cellvalue}" type="number" class="speed-slider" id="speed-slider-${options.rowId}">`;
                 }
             },
@@ -359,7 +361,7 @@ function initGrids() {
                 $('#step-new').prop('disabled', false);
             }
         },
-        ondblClickRow(rowid, iRow, iCol) {
+        ondblClickRow(rowid) {
             const $this = $(this);
             const savedRow = $this.jqGrid('getGridParam', 'savedRow');
 
@@ -566,7 +568,6 @@ function initGrids() {
 
     ipc.send('getscenes');
     ipc.send('getsequences');
-
 }
 
 function resizeGrids() {
@@ -586,7 +587,6 @@ function resizeGrids() {
         .jqGrid('gridResize');
 }
 
-let sceneNames = {};
 function loadScenes() {
     const gridData = [];
     $('#scenes').jqGrid('clearGridData');
@@ -603,7 +603,6 @@ function loadScenes() {
     $('#scenes').jqGrid('sortGrid', 'name', true, 'asc');
 }
 
-let sequenceNames = {};
 function loadSequences() {
     const gridData = [];
     $('#sequences').jqGrid('clearGridData');
@@ -654,7 +653,7 @@ ipc.on('seqstart', (event, seq) => {
         name: seq,
         repeat: sequenceSettings[seq].repeat,
         shuffle: sequenceSettings[seq].shuffle,
-        speed: sequenceSettings[seq].speed,
+        speed: sequenceSettings[seq].speed
     };
     checkShortcuts(settings);
     $('#jPlayButton_' + sequenceNames[seq]).addClass('btn-info');
@@ -671,7 +670,6 @@ ipc.on('seqstop', (event, seq) => {
     const $row = $('table#sequences tr[id=' + sequenceNames[seq] + ']');
     $row.removeClass('hold');
     $row.removeClass('trans');
-
 });
 ipc.on('seqpause', (event, seq) => {
     runningSequences[seq] = 'pause';
@@ -783,7 +781,6 @@ $('#scene-new').click(() => {
     $('#scenes #' + $('#scenes').jqGrid('getGridParam', 'selrow')).focus();
 });
 
-
 ipc.on('shortcutedit', (event, mode) => {
     console.log('shortcutedit', mode);
     if (mode) {
@@ -821,7 +818,7 @@ $('button.shortcut-scene').click(function () {
     loadShortcuts();
     ipc.send('saveShortcuts', JSON.stringify(shortcuts));
 });
-let activeShortcuts = {};
+const activeShortcuts = {};
 function loadShortcuts() {
     shortcuts.forEach((s, i) => {
         if (s) {
@@ -833,7 +830,7 @@ function loadShortcuts() {
                 $('.shortcutedit-box[data-shortcut="' + i + '"] span').html(s.name);
                 $button.addClass('btn-info');
                 $button.removeClass('btn-primary');
-                $button.click(function () {
+                $button.click(() => {
                     load(scenes[s.name]);
                 });
             } else {
@@ -842,7 +839,7 @@ function loadShortcuts() {
                 $button.removeClass('btn-info');
                 $button.addClass('btn-primary');
                 const {repeat, shuffle, speed} = s.settings;
-                $button.click(function () {
+                $button.click(() => {
                     if (activeShortcuts[i]) {
                         delete activeShortcuts[i];
                         $button.removeClass('active');
@@ -867,7 +864,6 @@ function loadShortcuts() {
                 });
             }
         }
-
     });
 }
 
@@ -886,7 +882,6 @@ function checkShortcuts(settings) {
                 .prop('disabled', true);
             delete shortcuts[i];
             ipc.send('saveShortcuts', JSON.stringify(shortcuts));
-
         } else if (
             s &&
             s.type === 'seq' &&
