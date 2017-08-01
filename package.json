@@ -9,7 +9,7 @@
     "dist": "build",
     "test": "xo --space 4"
   },
-  "repository": "https://github.com/electron/electron-quick-start",
+  "repository": "https://github.com/hobbyquaker/mqtt-dmx-controller",
   "keywords": [
     "ArtNet",
     "DMX",
