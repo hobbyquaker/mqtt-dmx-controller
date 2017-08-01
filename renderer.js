@@ -907,3 +907,11 @@ function checkShortcuts(settings) {
         }
     });
 }
+
+$('#check-all').click(function () {
+    $('.channel-active').prop('checked', true);
+});
+
+$('#uncheck-all').click(function () {
+    $('.channel-active').prop('checked', false);
+});

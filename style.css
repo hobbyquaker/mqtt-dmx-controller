@@ -231,3 +231,28 @@ tr.hold, tr.hold td {
 #settings .panel {
     width: 400px;
 }
+
+#check-all-container {
+    display: block;
+    width: 40px;
+    height: 100%;
+}
+
+#check-all-container div {
+    height: 50%;
+}
+
+#check-all-container button {
+    position: relative;
+    transform: rotate(90deg);
+}
+
+#check-all {
+    top: 50%;
+    margin-left: -14px;
+}
+
+#uncheck-all {
+    top: 20%;
+    margin-left: -20px;
+}
