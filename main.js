@@ -135,9 +135,6 @@ const menuTemplate = [
         ]
     },
     {
-        label: 'Edit Shortcuts'
-    },
-    {
         label: 'Export',
         submenu: [
             {
@@ -261,8 +258,11 @@ function createSettingsWindow() {
 
     settingsWindow.once('ready-to-show', () => {
         settingsWindow.webContents.send('config', config);
+        settingsWindow.setMenu(null);
         settingsWindow.show();
     });
+
+
 
     // SettingsWindow.webContents.openDevTools();
 }
