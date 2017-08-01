@@ -38,7 +38,7 @@ body {
 
 
 #mixer-container {
-    height: 270px;
+    height: 286px;
     margin-left: 2px;
     width: calc(100% - 6px);
 }
@@ -71,7 +71,7 @@ body {
 }
 
 #mixer {
-    height: 270px;
+    height: 286px;
     width: 100%;
     overflow-x: scroll;
     overflow-y: hidden;

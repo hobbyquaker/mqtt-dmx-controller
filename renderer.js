@@ -571,7 +571,7 @@ function initGrids() {
 }
 
 function resizeGrids() {
-    const height = $(window).height() - 456;
+    const height = $(window).height() - 472;
     const width = $('#sequences-container').width() - 2;
     $('#scenes')
         .jqGrid('setGridWidth', width)
