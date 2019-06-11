@@ -520,7 +520,7 @@ function initGrids() {
             $this.jqGrid('editRow', rowid, {
                 focusField: iCol,
                 aftersavefunc(id, j, row) {
-                    sequences[selectedSeq][id] = [row.scene, row.trans, row.hold];
+                    sequences[selectedSeq][id] = [$this.jqGrid("getCell", id, "scene"), row.trans, row.hold];
                     ipc.send('seqstop', selectedSeq);
                     checkShortcuts({name: selectedSeq});
                     ipc.send('saveSequences', JSON.stringify(sequences));

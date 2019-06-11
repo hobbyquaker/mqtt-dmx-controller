@@ -207,12 +207,18 @@ if (process.platform === 'darwin') {
 function createWindows() {
     const mainWindowState = windowStateKeeper({
         defaultWidth: 1280,
-        defaultHeight: 800
+        defaultHeight: 800,
+        webPreferences: {
+            nodeIntegration: true
+        }
     });
 
     const devWindowState = {
         width: 1280,
-        height: 800
+        height: 800,
+        webPreferences: {
+            nodeIntegration: true
+        }
     };
 
     const windowState = isDev ? devWindowState : mainWindowState;
@@ -247,7 +253,10 @@ function createSettingsWindow() {
         height: 480,
         modal: true,
         parent: mainWindow,
-        show: false
+        show: false,
+        webPreferences: {
+            nodeIntegration: true
+        }
     });
 
     settingsWindow.loadURL(url.format({
