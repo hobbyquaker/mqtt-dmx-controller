@@ -52,7 +52,7 @@ packages to an [Art-Net](http://en.wikipedia.org/wiki/Art-Net) node.
 
 The MIT License (MIT)
 
-Copyright (c) Sebastian Raff 
+Copyright (c) Sebastian Raff and mqtt-dmx-controller contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

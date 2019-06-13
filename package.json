@@ -18,6 +18,9 @@
     "LED"
   ],
   "author": "Sebastian Raff <hq@ccu.io> https://github.com/hobbyquaker",
+  "contributors": [
+    "https://github.com/4lloyd"
+  ],
   "license": "MIT",
   "devDependencies": {
     "electron": "latest",
