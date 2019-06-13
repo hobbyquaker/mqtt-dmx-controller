@@ -98,7 +98,8 @@ try {
 }
 
 const artnet = new Artnet({
-    host: config.address
+    host: config.address,
+    sendAll: true
 });
 
 artnet.data[0] = [];
