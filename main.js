@@ -58,12 +58,22 @@ function saveConfig() {
 
 try {
     config = require(path.join(ppath, 'config.json'));
+
+    if (config.version != '1.1.0') {
+        config.version = '1.1.0';
+        config.mqtt_username = '';
+        config.mqtt_password = '';
+        saveConfig();
+    }
 } catch (err) {
     config = {
+        version: '1.1.0',
         address: '255.255.255.255',
         port: 6454,
         url: 'mqtt://127.0.0.1',
         name: 'dmx',
+        mqtt_username: '',
+        mqtt_password: '',
         channels: 24
     };
     saveConfig();
@@ -380,7 +390,10 @@ sequencer.on('step', step => {
 });
 
 debug('mqtt trying to connect', config.url);
-const mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0'}});
+const mqtt = Mqtt.connect(config.url, {username: config.mqtt_username,
+                                       password: config.mqtt_password,
+                                       will: {topic: config.name + '/connected', payload: '0'}
+                                      });
 
 mqtt.on('connect', () => {
     mqttConnected = true;
@@ -490,7 +503,9 @@ function updateSequence(sequence, speed, shuffle, repeat) {
 
 ipc.on('saveConfig', (event, c) => {
     console.log('saveConfig');
+    const version = config.version;
     config = c;
+    config.version = version;
     saveConfig();
     app.relaunch();
     mainWindow.destroy();
